@@ -616,18 +616,12 @@ async def chunk_update(
     collection: models.Collection = Depends(get_collection),
 ):
     # IGNORED FOR NOW: col_it = get_object_or_404(col.items, uid=collection_item_uid)
-<<<<<<< Updated upstream
     if isinstance(request, MsgpackRequest):
         body = await request.raw_body()
     else:
         body = await request.body()
-
-    content_file = ContentFile(body)
-=======
-    content = await request.body()
->>>>>>> Stashed changes
     try:
-        chunk_save(chunk_uid, collection, content)
+        chunk_save(chunk_uid, collection, body)
     except IntegrityError:
         raise HttpError("chunk_exists", "Chunk already exists.", status_code=status.HTTP_409_CONFLICT)
 
