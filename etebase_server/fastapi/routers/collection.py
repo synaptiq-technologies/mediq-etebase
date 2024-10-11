@@ -61,11 +61,7 @@ class CollectionItemRevisionInOut(BaseModel):
         chunks: t.List[ChunkType] = []
         for chunk_relation in obj.chunks_relation.all():
             chunk_obj = chunk_relation.chunk
-            if context.prefetch == "auto":
-                with open(chunk_obj.chunkFile.path, "rb") as f:
-                    chunks.append((chunk_obj.uid, f.read()))
-            else:
-                chunks.append((chunk_obj.uid, None))
+            chunks.append((chunk_obj.uid, chunk_obj.content))
         return cls(uid=obj.uid, meta=bytes(obj.meta), deleted=obj.deleted, chunks=chunks)
 
 
@@ -603,10 +599,8 @@ def item_batch(
 # Chunks
 
 
-@sync_to_async
-def chunk_save(chunk_uid: str, collection: models.Collection, content_file: ContentFile):
-    chunk_obj = models.CollectionItemChunk(uid=chunk_uid, collection=collection)
-    chunk_obj.chunkFile.save("IGNORED", content_file)
+def chunk_save(chunk_uid: str, collection: models.Collection, content: bytes):
+    chunk_obj = models.CollectionItemChunk(uid=chunk_uid, collection=collection, content=content)
     chunk_obj.save()
     return chunk_obj
 
@@ -622,14 +616,18 @@ async def chunk_update(
     collection: models.Collection = Depends(get_collection),
 ):
     # IGNORED FOR NOW: col_it = get_object_or_404(col.items, uid=collection_item_uid)
+<<<<<<< Updated upstream
     if isinstance(request, MsgpackRequest):
         body = await request.raw_body()
     else:
         body = await request.body()
 
     content_file = ContentFile(body)
+=======
+    content = await request.body()
+>>>>>>> Stashed changes
     try:
-        await chunk_save(chunk_uid, collection, content_file)
+        chunk_save(chunk_uid, collection, content)
     except IntegrityError:
         raise HttpError("chunk_exists", "Chunk already exists.", status_code=status.HTTP_409_CONFLICT)
 

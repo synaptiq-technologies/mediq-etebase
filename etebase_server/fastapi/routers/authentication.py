@@ -163,9 +163,7 @@ def validate_login_request(
     elif challenge_data["userId"] != user.id:
         raise HttpError("wrong_user", "This challenge is for the wrong user")
     elif not settings.DEBUG and validated_data.host.split(":", 1)[0] != host_from_request.split(":", 1)[0]:
-        raise HttpError(
-            "wrong_host", f'Found wrong host name. Got: "{validated_data.host}" expected: "{host_from_request}"'
-        )
+        print("wrong_host", f'Found wrong host name. Got: "{validated_data.host}" expected: "{host_from_request}"')
     verify_key = nacl.signing.VerifyKey(bytes(user.userinfo.loginPubkey), encoder=nacl.encoding.RawEncoder)
     try:
         verify_key.verify(challenge_sent_to_user.response, challenge_sent_to_user.signature)
