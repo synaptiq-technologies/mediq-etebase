@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
 from django.db.models import Q, QuerySet
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
+from fastapi.responses import PlainTextResponse
 
 from etebase_server.django import models
 from etebase_server.myauth.models import UserType
@@ -15,7 +16,6 @@ from ..dependencies import get_collection, get_collection_queryset, get_item_que
 from ..exceptions import HttpError, PermissionDenied, ValidationError, transform_validation_error
 from ..msgpack import MsgpackRequest, MsgpackResponse, MsgpackRoute
 from ..redis import redisw
-from ..sendfile import sendfile
 from ..stoken_handler import filter_by_stoken, filter_by_stoken_and_limit, get_queryset_stoken, get_stoken_obj
 from ..utils import (
     PERMISSIONS_READ,
@@ -298,8 +298,7 @@ def process_revisions_for_item(item: models.CollectionItem, revision_data: Colle
         # If the chunk already exists we assume it's fine. Otherwise, we upload it.
         if chunk_obj is None:
             if content is not None:
-                chunk_obj = models.CollectionItemChunk(uid=uid, collection=item.collection)
-                chunk_obj.chunkFile.save("IGNORED", ContentFile(content))
+                chunk_obj = models.CollectionItemChunk(uid=uid, collection=item.collection, content=content)
                 chunk_obj.save()
             else:
                 raise ValidationError("chunk_no_content", "Tried to create a new chunk without content")
@@ -636,5 +635,4 @@ def chunk_download(
 ):
     chunk = get_object_or_404(collection.chunks, uid=chunk_uid)
 
-    filename = chunk.chunkFile.path
-    return sendfile(filename)
+    return PlainTextResponse(chunk.content, media_type="application/octet-stream")
