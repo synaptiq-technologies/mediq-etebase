@@ -61,7 +61,7 @@ class CollectionItemRevisionInOut(BaseModel):
         chunks: t.List[ChunkType] = []
         for chunk_relation in obj.chunks_relation.all():
             chunk_obj = chunk_relation.chunk
-            chunks.append((chunk_obj.uid, chunk_obj.content))
+            chunks.append((chunk_obj.uid, bytes(chunk_obj.content)))
         return cls(uid=obj.uid, meta=bytes(obj.meta), deleted=obj.deleted, chunks=chunks)
 
 
@@ -635,4 +635,4 @@ def chunk_download(
 ):
     chunk = get_object_or_404(collection.chunks, uid=chunk_uid)
 
-    return PlainTextResponse(chunk.content, media_type="application/octet-stream")
+    return PlainTextResponse(bytes(chunk.content), media_type="application/octet-stream")
