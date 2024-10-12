@@ -559,10 +559,36 @@ def fetch_updates(
     stoken_rev_uid = stoken_rev and getattr(stoken_rev, "uid", None)
     new_stoken = new_stoken or stoken_rev_uid
 
-    context = Context(user, prefetch)
+    chunks_queryset = (
+        models.RevisionChunkRelation.objects.filter(
+            revision__current=True,
+            revision__item__in=queryset,
+        )
+        .order_by("chunk__id")
+        .select_related("chunk", "revision", "revision__item")
+    )
+    collection_items: t.Dict[str, t.List[CollectionItemOut]] = {}
+    for rcr in chunks_queryset:
+        revision = rcr.revision
+        item = revision.item
+        chunk = rcr.chunk
+        if item.uid not in collection_items:
+            collection_items[item.uid] = CollectionItemOut(
+                uid=item.uid,
+                version=item.version,
+                encryptionKey=item.encryptionKey,
+                content=CollectionItemRevisionInOut(
+                    uid=revision.uid,
+                    meta=bytes(revision.meta),
+                    deleted=revision.deleted,
+                    chunks=[],
+                ),
+            )
+        collection_items[item.uid].content.chunks.append((chunk.uid, bytes(chunk.content)))
+
     return MsgpackResponse(
         CollectionItemListResponse(
-            data=[CollectionItemOut.from_orm_context(item, context) for item in queryset],
+            data=list(collection_items.values()),
             stoken=new_stoken,
             done=True,  # we always return all the items, so it's always done
         )
