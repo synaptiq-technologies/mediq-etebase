@@ -117,7 +117,7 @@ def chunk_directory_path(instance: "CollectionItemChunk", filename: str) -> Path
 class CollectionItemChunk(models.Model):
     uid = models.CharField(db_index=True, blank=False, null=False, max_length=60, validators=[UidValidator])
     collection = models.ForeignKey(Collection, related_name="chunks", on_delete=models.CASCADE)
-    chunkFile = models.FileField(upload_to=chunk_directory_path, max_length=150, unique=True, null=True, blank=True)
+    chunkFile = models.FileField(upload_to=chunk_directory_path, max_length=150, unique=False, null=True, blank=True)
     content = models.BinaryField(null=True, blank=True, editable=True)
 
     objects: models.manager.BaseManager["CollectionItemChunk"]
